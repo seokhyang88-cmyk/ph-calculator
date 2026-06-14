@@ -33,7 +33,7 @@ st.markdown("### 🔢 키패드")
 # 1행: 지수, 로그, 지우기 기능 버튼들
 row1 = st.columns(4)
 with row1[0]:
-    if st.button("C", use_container_width=True, type="minor"): press("C")
+    if st.button("C", use_container_width=True): press("C")
 with row1[1]:
     if st.button("◀", use_container_width=True): press("◀")
 with row1[2]:
@@ -96,9 +96,7 @@ col_macro1, col_macro2 = st.columns(2)
 with col_macro1:
     if st.button("수소이온농도 ➡️ pH 변환", use_container_width=True, type="primary"):
         try:
-            # 디스플레이에 입력된 수식을 안전하게 계산해서 농도값 구하기
             raw_expression = st.session_state.calc_input
-            # 괄호가 안 닫힌 경우 자동 닫기 처리
             if raw_expression.count("(") > raw_expression.count(")"):
                 raw_expression += ")" * (raw_expression.count("(") - raw_expression.count(")"))
             
