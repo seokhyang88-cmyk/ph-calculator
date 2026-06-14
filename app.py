@@ -84,3 +84,43 @@ elif menu == "4. 두 용액을 섞은 혼합 용액의 pH 구하기":
     
     if st.button("혼합 용액 정답 확인", key="b4"):
         total_volume_l = (acid_v + base_v) / 1000
+        acid_eq = acid_n * (acid_v / 1000)
+        base_eq = base_n * (base_v / 1000)
+        
+        if acid_eq > base_eq:
+            ph = -math.log10((acid_eq - base_eq) / total_volume_l)
+            st.warning(f"산이 더 많아서 '산성'입니다.")
+        elif base_eq > acid_eq:
+            ph = 14 - (-math.log10((base_eq - acid_eq) / total_volume_l))
+            st.info(f"염기가 더 많아서 '염기성'입니다.")
+        else: 
+            ph = 7.0
+            st.success("완전 중화되었습니다!")
+            
+        st.success(f"🎉 최종 혼합 용액의 정답: pH = **{ph:.2f}**")
+
+# --- 유형 5 ---
+elif menu == "5. 🧪 용액의 농도 단위환산 (1 → 100 표현 등)":
+    st.subheader("📊 용액의 농도 단위환산기")
+    st.write("`NaOH (1 → 100)` 같은 표현법 및 다양한 단위 변환을 수행합니다.")
+    
+    st.info("ℹ️ 약전 표기법 지식: `(1 → 100)`은 고체 용질 1g을 녹여 총 용액 100mL를 만들었다는 뜻이며, 이는 정확히 **1 W/V %** 농도와 같습니다.")
+    
+    col_a, col_b = st.columns(2)
+    with col_a: solute_g = st.number_input("용질의 양 (g)", value=1.0, step=0.1)
+    with col_b: solution_ml = st.number_input("전체 용액의 부피 (mL)", value=100.0, step=10.0)
+        
+    molecular_weight = st.number_input("용질의 분자량 (예: NaOH는 40)", value=40.0, step=1.0)
+    
+    st.markdown("---")
+    
+    if st.button("🔄 단위환산 결과 보기", type="primary"):
+        wv_percent = (solute_g / solution_ml) * 100
+        g_per_liter = (solute_g / solution_ml) * 1000
+        mol_per_liter = g_per_liter / molecular_weight
+        mg_per_liter = g_per_liter * 1000
+        
+        st.markdown("### 📋 변환 결과 리스트")
+        st.success(f"1️⃣ **몰농도 (mol/ℓ):** {mol_per_liter:.4f} mol/L")
+        st.success(f"2️⃣ **ppm 농도 (mg/ℓ):** {mg_per_liter:,.0f} ppm")
+        st.success(f"3️⃣ **W/V % 농도:** {wv_percent:.2f} W/V %")
