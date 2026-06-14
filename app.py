@@ -18,7 +18,7 @@ menu = st.selectbox(
         "3. 단일 용액(NaOH, H2SO4 등)의 pH 구하기 (N/M 선택 가능)",
         "4. 두 용액을 섞은 혼합 용액의 pH 구하기",
         "5. 🧪 용액의 농도 단위환산 (1 → 100 표현 등)",
-        "6. 🧪 [신규] 약산의 전리도(해리도)를 이용한 pH 구하기"
+        "6. 🧪 약산/약염기 전리도를 이용한 pH 구하기 (산/염기 선택)"
     ]
 )
 
@@ -113,33 +113,46 @@ elif menu == "5. 🧪 용액의 농도 단위환산 (1 → 100 표현 등)":
         st.success(f"2️⃣ **ppm 농도 (mg/ℓ):** {mg_per_liter:,.0f} ppm")
         st.success(f"3️⃣ **W/V % 농도:** {wv_percent:.2f} W/V %")
 
-# --- 🌟 [신규] 유형 6: 전리도 계산 기능 🌟 ---
-elif menu == "6. 🧪 [신규] 약산의 전리도(해리도)를 이용한 pH 구하기":
-    st.subheader("🧪 약산 전리도 기반 pH 계산기")
-    st.write("예: 0.01M CH3COOH는 1% 전리된다. 이 용액의 pH는?")
+# --- 🌟 [업그레이드] 유형 6: 약산/약염기 전리도 계산 기능 🌟 ---
+elif menu == "6. 🧪 약산/약염기 전리도를 이용한 pH 구하기 (산/염기 선택)":
+    st.subheader("🧪 전리도(해리도) 기반 pH 종합 계산기")
+    st.write("약산(CH3COOH 등) 또는 약염기(NH4OH 등)의 전리도를 이용해 pH를 계산합니다.")
     
-    # 입력 세팅
-    molarity = st.number_input("용액의 몰 농도 (M)", value=0.010, format="%.4f", step=0.001)
-    ionization_input = st.number_input("전리도(해리도) 입력 (값 또는 %)", value=1.0, format="%.2f", step=0.1)
+    # 1. 성질 선택 추가!
+    acid_base_type = st.radio("용액의 성질을 고르세요:", ["약산성 용액 (CH3COOH 등)", "약염기성 용액 (NH4OH 등)"])
     
-    input_type = st.radio("전리도 입력 단위를 선택하세요:", ["퍼센트 단위 (%)", "소수점 단위 (0~1 사이의 값)"])
+    # 2. 입력 세팅
+    molarity = st.number_input("용액의 몰 농도 (M)", value=0.100, format="%.4f", step=0.001)
+    ionization_input = st.number_input("전리도(해리도) 입력 (값 또는 %)", value=0.0001, format="%.5f", step=0.0001)
+    
+    input_type = st.radio("전리도 입력 단위를 선택하세요:", ["소수점 단위 (0~1 사이의 값)", "퍼센트 단위 (%)"])
     
     st.markdown("---")
     
     if st.button("🎉 정답 확인", type="primary"):
-        # 퍼센트 입력이면 100으로 나누어 소수점 전리도(알파)로 변환
+        # 전리도(알파) 단위 통일
         if input_type == "퍼센트 단위 (%)":
             alpha = ionization_input / 100.0
         else:
             alpha = ionization_input
             
         if alpha <= 0 or alpha > 1:
-            st.error("❌ 전리도 값이 올바르지 않습니다. (% 기준 0~100, 소수점 기준 0~1 사이여야 합니다.)")
+            st.error("❌ 전리도 값이 올바르지 않습니다.")
         else:
-            # 수소 이온 농도 [H+] = 몰 농도(C) * 전리도(alpha)
-            h_conc = molarity * alpha
-            ph = -math.log10(h_conc)
+            # 이온 농도 계산 (C * alpha)
+            ion_conc = molarity * alpha
             
             st.markdown("### 📋 계산 프로세스 및 결과")
-            st.info(f"🧬 **실제 수소 이온 농도 [H⁺]** = {molarity} M × {alpha} = **{h_conc:.5f} mol/L**")
-            st.success(f"🎉 **최종 정답 pH = {ph:.2f}**")
+            
+            if acid_base_type == "약산성 용액 (CH3COOH 등)":
+                # 산일 때
+                ph = -math.log10(ion_conc)
+                st.info(f"🧬 **수소 이온 농도 [H⁺]** = {molarity} M × {alpha} = **{ion_conc:.5f} mol/L**")
+                st.success(f"🎉 **최종 정답 pH = {ph:.2f}**")
+            else:
+                # 염기일 때 (NH4OH 문제 해결 부분!)
+                poh = -math.log10(ion_conc)
+                ph = 14.0 - poh
+                st.info(f"🧬 **수산화 이온 농도 [OH⁻]** = {molarity} M × {alpha} = **{ion_conc:.5f} mol/L**")
+                st.info(f"🧪 **pOH** = -log10({ion_conc:.5f}) = **{poh:.2f}**")
+                st.success(f"🎉 **최종 정답 pH (14 - pOH) = {ph:.2f}**")
