@@ -2,9 +2,9 @@ import streamlit as st
 import math
 
 # 스마트폰 화면 비율에 맞게 페이지 설정
-st.set_page_config(page_title="공학용 pH 마스터 v3.0", layout="centered")
+st.set_page_config(page_title="공학용 pH 마스터 v3.1", layout="centered")
 
-# --- 🎨 공학용 계산기 스타일 CSS 입히기 ---
+# --- 🎨 공학용 계산기 스타일 CSS 입히기 (중괄호 이스케이프 에러 수정 완료) ---
 st.markdown("""
     <style>
     /* 전체 배경을 어두운 계산기 프레임 느낌으로 설정 */
@@ -39,11 +39,10 @@ if "e_val" not in st.session_state: st.session_state.e_val = "-4"
 if "ph_result" not in st.session_state: st.session_state.ph_result = ""
 
 # --- 📱 1. 위쪽 민트색 모니터 액정 화면 (LCD) ---
-# 이 영역 안에 선택창, 안내문구, 계산 결과가 모두 들어갑니다.
 screen_placeholder = st.container()
 
 with screen_placeholder:
-    # HTML 주입을 통해 이미지와 똑같은 감성의 민트색 액정 상자를 만듭니다.
+    # 파이썬 문자열 포맷팅 에러를 방지하기 위해 CSS와 HTML 코드를 명확히 분리하여 렌더링합니다.
     lcd_content = f"""
     <div class="lcd-screen">
         <div class="lcd-text"><b>[MODE {st.session_state.calc_menu}] 단일 용액 pH 산출 모드</b></div>
@@ -62,7 +61,7 @@ st.write("---")
 # --- ⌨️ 2. 아래쪽 검은색 물리 버튼 패드 ---
 st.write("계산기 키패드 조작창")
 
-# [상단 제어기 라인] 유형(모드) 선택 및 값 세팅 조절창을 패드 내부에 조화롭게 배치
+# [상단 제어기 라인] 유형(모드) 선택 및 값 세팅 조절창
 menu_select = st.selectbox(
     "MODE (문제 유형 변경):",
     [
@@ -90,15 +89,14 @@ st.write("")
 col_btn1, col_btn2, col_btn3 = st.columns(3)
 
 with col_btn1:
-    if st.button("AC (초기화)", use_container_width=True):
+    if st.button("AC (초기화)", use_container_width=True, key="btn_ac"):
         st.session_state.p_val = "1.0"
         st.session_state.e_val = "-7"
         st.session_state.ph_result = "SYSTEM RESET 완료"
         st.rerun()
 
 with col_btn2:
-    # 이미지 속 Log, Exp 역할을 하는 단서 확인용 인터럽트 버튼
-    if st.button("Log (단서 확인)", use_container_width=True):
+    if st.button("Log (단서 확인)", use_container_width=True, key="btn_log"):
         try:
             val_p = float(st.session_state.p_val)
             st.session_state.ph_result = f"LOG DATA: log10({val_p}) = {math.log10(val_p):.4f}"
@@ -107,8 +105,7 @@ with col_btn2:
         st.rerun()
 
 with col_btn3:
-    # 이미지 속 가장 중요한 우측 하단의 [ = ] 버튼 역할
-    if st.button(" ＝ (결과 출력)", type="primary", use_container_width=True):
+    if st.button(" ＝ (결과 출력)", type="primary", use_container_width=True, key="btn_equal"):
         try:
             p = float(st.session_state.p_val)
             e = float(st.session_state.e_val)
@@ -118,7 +115,6 @@ with col_btn3:
             else:
                 h_conc = p * (10 ** e)
                 
-                # 선택된 모드에 따라 민트색 모니터창에 띄울 결과를 다르게 연산
                 if st.session_state.calc_menu == "1":
                     final_ph = -math.log10(h_conc)
                     st.session_state.ph_result = f"OUTPUT ──> pH = {final_ph:.2f}"
@@ -130,7 +126,6 @@ with col_btn3:
                     final_ph = -math.log10(h_conc)
                     st.session_state.ph_result = f"강산 OUTPUT ──> pH = {final_ph:.2f}"
                 elif st.session_state.calc_menu == "4":
-                    # 간소화된 약산 연산 결과 예시 표출
                     final_ph = -math.log10(h_conc * 0.01)
                     st.session_state.ph_result = f"약산(1%전리) ──> pH = {final_ph:.2f}"
         except:
