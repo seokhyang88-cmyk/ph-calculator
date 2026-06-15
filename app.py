@@ -2,7 +2,15 @@ import streamlit as st
 import math
 
 # 스마트폰 화면에 맞게 페이지 설정
-st.set_page_config(page_title="화학 pH 마스터 v2.3", layout="centered")
+st.set_page_config(page_title="화학 pH 마스터 v2.4", layout="centered")
+
+# 사용자의 요청에 따라 최상단에 대표적인 산성/염기성 물질 가이드를 균일한 글자 크기로 추가했습니다.
+st.write("📋 대표적인 산성 및 염기성 물질 가이드")
+st.write("· 강산 (5번 메뉴): 염산(HCl), 황산(H2SO4), 질산(HNO3)")
+st.write("· 약산 (8번 메뉴): 초산/아세트산(CH3COOH), 탄산(H2CO3)")
+st.write("· 강염기 (5번 메뉴): 수산화나트륨(NaOH), 수산화칼륨(KOH), 수산화칼슘(Ca(OH)2)")
+st.write("· 약염기 (8번 메뉴): 암모니아수/수산화암모늄(NH4OH)")
+st.write("---")
 
 st.write("풀고 싶은 문제 유형을 선택하고 숫자를 입력하세요.")
 
@@ -172,7 +180,6 @@ elif menu == "8. 약산/약염기 pH 계산기 (전리도 또는 해리상수 Ka
 
 # --- 유형 9: 농도 단위 교차 환산기 ---
 elif menu == "9. 농도 단위 교차 환산기 (M, N, ppm, % 무조건 변환)":
-    # 사용자의 요청에 따라 대표 원소 및 물질들의 분자량 가이드를 텍스트로 추가했습니다.
     st.write("📋 자주 나오는 대표 물질 분자량 가이드")
     st.write("수산화나트륨 (NaOH) = 40.0 | 염산 (HCl) = 36.5")
     st.write("황산 (H2SO4) = 98.0 | 수산화칼륨 (KOH) = 56.0")
