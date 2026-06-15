@@ -7,7 +7,7 @@ st.set_page_config(page_title="공학용 pH 마스터 v5.5", layout="centered")
 # 📸 1. 최상단 공학용 계산기 자판 이미지 배치 구역
 # (추후 깃허브나 ImgBB에 올리신 본인의 계산기 이미지 주소로 이 링크만 교체하시면 됩니다!)
 st.image(
-    "https://github.com/seokhyang88-cmyk/ph-calculator/blob/main/pHcal.jpg?raw=true", 
+    "https://github.com/seokhyang88-cmyk/ph-calculator/blob/main/pHcal2.jpg?raw=true", 
     caption="Scientific Calculator Active Skin",
     use_container_width=True
 )
