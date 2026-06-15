@@ -2,14 +2,13 @@ import streamlit as st
 import math
 
 # 스마트폰 화면 비율에 맞게 페이지 설정
-st.set_page_config(page_title="공학용 pH 마스터 v4.0", layout="centered")
+st.set_page_config(page_title="공학용 pH 마스터 v4.1", layout="centered")
 
 # 세션 스테이트(메모리) 초기화
 if "calc_menu" not in st.session_state: st.session_state.calc_menu = "1"
 if "ph_result" not in st.session_state: st.session_state.ph_result = "INPUT VALUE & PRESS [ ＝ ]"
 
 # --- 📱 1. 실제 계산기 액정 화면 (LCD) 구역 ---
-# 에러가 절대 나지 않는 순정 컴포넌트로 상단 액정을 표현합니다.
 monitor_text = (
     "💻 SCIENTIFIC pH CALCULATOR [MODE " + st.session_state.calc_menu + "]\n"
     "──────────────────────────────\n"
@@ -20,7 +19,6 @@ st.info(monitor_text)
 st.write("---")
 
 # --- ⚙️ 2. 계산기 내부 상단 조작 및 입력 구역 ---
-# 실제 계산기 상단에 있는 MODE 설정과 입력창들입니다.
 menu_select = st.selectbox(
     "계산기 MODE 변경 (유형 선택):",
     [
@@ -138,7 +136,6 @@ elif current_mode == "10":
 st.write("")
 
 # --- 🕹️ 3. 실행 버튼 및 공학용 계산기 실제 자판 이미지 패드 구역 ---
-# 결과를 도출하는 버튼을 중앙에 큼직하게 배치합니다.
 if st.button(" ＝ [ RUN CALCULATOR ] ", type="primary", use_container_width=True, key="btn_equal"):
     try:
         if current_mode == "1":
@@ -213,11 +210,10 @@ if st.button(" ＝ [ RUN CALCULATOR ] ", type="primary", use_container_width=Tru
 
 st.write("---")
 
-# 사용자가 요청하신 '공학용 계산기 리얼 자판 이미지 패드'를 하단에 배치합니다.
-# 이 이미지가 시각적으로 계산기 보디 역할을 수행하여 완벽한 계산기 룩을 완성합니다.
+# 🔒 신뢰할 수 있고 안전한 글로벌 CDN 이미지 링크로 스킨 교체 완료
 st.write("⌨️ PHYSICAL KEYPAD FRAME")
 st.image(
-    "https://raw.githubusercontent.com/AnshulSoni07/Scientific-Calculator/master/Screenshot.png", 
+    "https://images.unsplash.com/photo-1610484826967-09c5720778c7?q=80&w=600", 
     caption="Scientific Calculator Keypad Skin",
     use_container_width=True
 )
