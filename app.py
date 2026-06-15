@@ -2,10 +2,17 @@ import streamlit as st
 import math
 
 # 스마트폰 화면 비율에 맞게 페이지 설정
-st.set_page_config(page_title="공학용 pH 마스터 v5.5", layout="centered")
+st.set_page_config(page_title="공학용 pH 마스터 v6.0", layout="centered")
 
-# 📸 1. 최상단 공학용 계산기 자판 이미지 배치 구역
-# (추후 깃허브나 ImgBB에 올리신 본인의 계산기 이미지 주소로 이 링크만 교체하시면 됩니다!)
+# 세션 스테이트(결과 저장용 메모리) 초기화
+if "ph_result" not in st.session_state: 
+    st.session_state.ph_result = "READY... [ ＝ ] BUTTON PRESS"
+
+# 📟 1. [위치 변경] 최상단 민트색 소형 액정(LCD) 화면 구역
+# 에러를 유발하는 HTML 주입 대신 스트림릿 순정 상자의 배경 컬러 감성을 활용했습니다.
+st.success("📟 LCD SCREEN : " + st.session_state.ph_result)
+
+# 📸 2. 공학용 계산기 자판 이미지 배치 (액정 바로 아래로 연결)
 st.image(
     "https://github.com/seokhyang88-cmyk/ph-calculator/blob/main/pHcal%20(2).jpg?raw=true", 
     caption="Scientific Calculator Active Skin",
@@ -14,10 +21,7 @@ st.image(
 
 st.write("---")
 
-# 세션 스테이트(메모리) 초기화
-if "ph_result" not in st.session_state: st.session_state.ph_result = ""
-
-# ⚙️ 2. 계산기 내부 조작 및 입력 구역 (1번부터 10번까지 전 메뉴 부활)
+# ⚙️ 3. 계산기 내부 조작 및 입력 구역 (1번부터 10번 전 기능 유지)
 menu_select = st.selectbox(
     "계산기 MODE 변경 (유형 선택):",
     [
@@ -135,7 +139,7 @@ elif current_mode == "10":
 
 st.write("")
 
-# 🕹️ 3. 결과 출력용 정순 컴포넌트 실행 버튼
+# 🕹️ 4. 계산 실행 버튼
 if st.button(" ＝ [ RUN CALCULATOR ] ", type="primary", use_container_width=True, key="btn_equal"):
     try:
         if current_mode == "1":
@@ -154,14 +158,14 @@ if st.button(" ＝ [ RUN CALCULATOR ] ", type="primary", use_container_width=Tru
                 floor_val = math.ceil(ph_input)
                 diff = floor_val - ph_input
                 if abs(diff - log_value) < 0.02:
-                    res += f"\n(보기 형태: {log_base_num} × 10^-{floor_val} mol/L)"
+                    res += f" ({log_base_num} × 10^-{floor_val} mol/L)"
             st.session_state.ph_result = res
             
         elif current_mode == "4":
             total_v_l = (v1 + v2) / 1000.0
             final_n = ((n1 * v1 / 1000.0) + (n2 * v2 / 1000.0)) / total_v_l
             ans_ph = -math.log10(final_n) if "산성" in sol_kind else 14.0 - (-math.log10(final_n))
-            st.session_state.ph_result = f"최종 농도: {final_n:.4f} N\n최종 pH = {ans_ph:.2f}"
+            st.session_state.ph_result = f"농도: {final_n:.4f} N | pH = {ans_ph:.2f}"
             
         elif current_mode == "5":
             final_n = raw_conc * 2 if (unit_type == "몰 농도 (M)" and "2가" in valence) else raw_conc
@@ -184,7 +188,7 @@ if st.button(" ＝ [ RUN CALCULATOR ] ", type="primary", use_container_width=Tru
         elif current_mode == "7":
             n_result = (n_standard * v_standard) / v_target
             ans_ph = -math.log10(n_result) if "강산" in target_type else 14.0 - (-math.log10(n_result))
-            st.session_state.ph_result = f"미지 농도: {n_result:.4f} N\n최종 pH = {ans_ph:.2f}"
+            st.session_state.ph_result = f"농도: {n_result:.4f} N | pH = {ans_ph:.2f}"
             
         elif current_mode == "8":
             if given_type == "해리 상수 (Ka 또는 Kb)":
@@ -199,16 +203,11 @@ if st.button(" ＝ [ RUN CALCULATOR ] ", type="primary", use_container_width=Tru
             calc_ppm = wv_percent * 10000.0
             calc_m = (wv_percent * 10.0) / mw
             calc_n = calc_m * val
-            st.session_state.ph_result = f"M농도: {calc_m:.4f} M | N농도: {calc_n:.4f} N\nppm: {calc_ppm:,.0f} ppm | %농도: {wv_percent:.2f} %"
+            st.session_state.ph_result = f"{calc_m:.4f} M | {calc_n:.4f} N | {calc_ppm:,.0f} ppm"
             
         elif current_mode == "10":
             poh = -math.log10(oh_p * (10 ** oh_e))
             st.session_state.ph_result = f"pH = {14.0 - poh:.2f}"
     except:
-        st.session_state.ph_result = "ERROR: 입력 수치를 확인하세요."
+        st.session_state.ph_result = "ERROR: 수치를 확인하세요."
     st.rerun()
-
-# 📢 4. 계산 결과 표시창 (버튼 바로 아래에 깔끔하게 배치)
-if st.session_state.ph_result:
-    st.write("---")
-    st.success(f"🎉 계산 결과\n\n{st.session_state.ph_result}")
