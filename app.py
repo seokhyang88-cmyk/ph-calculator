@@ -2,16 +2,14 @@ import streamlit as st
 import math
 
 # 스마트폰 화면 비율에 맞게 페이지 설정
-st.set_page_config(page_title="공학용 pH 마스터 v3.1", layout="centered")
+st.set_page_config(page_title="공학용 pH 마스터 v3.5", layout="centered")
 
-# --- 🎨 공학용 계산기 스타일 CSS 입히기 (중괄호 이스케이프 에러 수정 완료) ---
+# --- 🎨 공학용 계산기 스타일 CSS 입히기 ---
 st.markdown("""
     <style>
-    /* 전체 배경을 어두운 계산기 프레임 느낌으로 설정 */
     .stApp {
         background-color: #1e2022;
     }
-    /* 민트색 모니터 액정 화면 스타일 정의 */
     .lcd-screen {
         background-color: #e2ebd9;
         color: #1a251c;
@@ -21,39 +19,37 @@ st.markdown("""
         border: 4px solid #2d3238;
         box-shadow: inset 0px 4px 10px rgba(0,0,0,0.3);
         margin-bottom: 20px;
-        min-height: 180px;
+        min-height: 200px;
     }
-    /* 가이드라인과 텍스트 크기를 차분하게 고정 */
     .lcd-text {
-        font-size: 15px;
+        font-size: 14px;
         line-height: 1.5;
         margin: 2px 0;
     }
     </style>
 """, unsafe_allowed_html=True)
 
-# 버튼 입력을 실시간으로 기억하기 위한 세션 스테이트(메모리) 초기화
+# 세션 스테이트(메모리) 초기화
 if "calc_menu" not in st.session_state: st.session_state.calc_menu = "1"
-if "p_val" not in st.session_state: st.session_state.p_val = "5.8"
-if "e_val" not in st.session_state: st.session_state.e_val = "-4"
 if "ph_result" not in st.session_state: st.session_state.ph_result = ""
 
 # --- 📱 1. 위쪽 민트색 모니터 액정 화면 (LCD) ---
 screen_placeholder = st.container()
 
 with screen_placeholder:
-    # 파이썬 문자열 포맷팅 에러를 방지하기 위해 CSS와 HTML 코드를 명확히 분리하여 렌더링합니다.
-    lcd_content = f"""
-    <div class="lcd-screen">
-        <div class="lcd-text"><b>[MODE {st.session_state.calc_menu}] 단일 용액 pH 산출 모드</b></div>
-        <div class="lcd-text">· 입력된 H+ 농도: {st.session_state.p_val} × 10^{st.session_state.e_val} mol/L</div>
-        <div class="lcd-text">· 대표 가이드: HCl(강산), CH3COOH(약산), NaOH(강염기)</div>
-        <hr style="border: 0.5px solid #1a251c; margin: 10px 0;">
-        <div class="lcd-text" style="font-size: 18px; font-weight: bold; color: #0d381e;">
-            {st.session_state.ph_result if st.session_state.ph_result else "INPUT VALUE & PRESS [=]"}
-        </div>
-    </div>
-    """
+    res_text = st.session_state.ph_result if st.session_state.ph_result else "INPUT VALUE & PRESS [ ＝ ]"
+    
+    # 에러 방지를 위해 문자열 더하기 방식으로 안전하게 LCD 화면 생성
+    lcd_content = (
+        '<div class="lcd-screen">'
+        '<div class="lcd-text"><b>[MODE ' + st.session_state.calc_menu + '] 공학용 pH 연산 모드</b></div>'
+        '<div class="lcd-text">· 대표 가이드: 강산(HCl, H2SO4) | 약산(CH3COOH) | 강염기(NaOH, KOH)</div>'
+        '<hr style="border: 0.5px solid #1a251c; margin: 8px 0;">'
+        '<div class="lcd-text" style="font-size: 16px; font-weight: bold; color: #0d381e; min-height: 80px; white-space: pre-wrap;">'
+        + res_text +
+        '</div>'
+        '</div>'
+    )
     st.markdown(lcd_content, unsafe_allowed_html=True)
 
 st.write("---")
@@ -61,73 +57,202 @@ st.write("---")
 # --- ⌨️ 2. 아래쪽 검은색 물리 버튼 패드 ---
 st.write("계산기 키패드 조작창")
 
-# [상단 제어기 라인] 유형(모드) 선택 및 값 세팅 조절창
+# [상단 제어기] 1번부터 10번까지의 전 메뉴 부활
 menu_select = st.selectbox(
     "MODE (문제 유형 변경):",
     [
         "1. H+ 이온 농도로 pH 구하기",
         "2. H+ 이온 농도로 OH- 이온 농도 구하기",
-        "3. 강산 또는 강염기 단일 용액의 pH 구하기",
-        "4. 약산/약염기 pH 계산기 (전리도 기반)"
+        "3. pH 값을 주고 수소 이온 농도 [H+] 역산하기",
+        "4. 같은 성질의 산성/염기성 용액 혼합하기 (N 농도 기반)",
+        "5. 강산 또는 강염기 단일 용액의 pH 구하기",
+        "6. 두 용액을 섞은 혼합 용액의 pH 구하기 (교차/동일 혼합)",
+        "7. 중화 적정 실험 데이터로 미지 용액의 농도 및 pH 구하기",
+        "8. 약산/약염기 pH 계산기 (전리도 또는 해리상수 선택)",
+        "9. 농도 단위 교차 환산기 (M, N, ppm, % 무조건 변환)",
+        "10. 수산화 이온 농도 [OH-]로 곧바로 pH 구하기"
     ],
     key="mode_box"
 )
-st.session_state.calc_menu = menu_select.split(".")[0]
+current_mode = menu_select.split(".")[0]
+st.session_state.calc_menu = current_mode
 
-# 이미지 속 계산기의 상단 특수키 구역처럼 수치 조절 필드를 배치
-col_input1, col_input2 = st.columns(2)
-with col_input1:
-    in_p = st.text_input("농도 앞자리 (숫자 패드 대용):", value=st.session_state.p_val, key="in_p_key")
-    st.session_state.p_val = in_p
-with col_input2:
-    in_e = st.text_input("10의 마이너스 지수 (Exp 대용):", value=st.session_state.e_val, key="in_e_key")
-    st.session_state.e_val = in_e
+# 각 메뉴별 입력창 인터페이스 정의
+st.write("▼ 현재 모드 입력창 세팅")
+
+if current_mode == "1":
+    col1, col2 = st.columns(2)
+    with col1: hp_prefix = st.number_input("농도 앞자리 숫자 (예: 5.8):", value=5.8, step=0.1, key="m1_p")
+    with col2: hp_exponent = st.number_input("10의 마이너스 지수 (예: -4):", value=-4, step=1, key="m1_e")
+
+elif current_mode == "2":
+    col1, col2 = st.columns(2)
+    with col1: h_prefix = st.number_input("농도 앞자리 숫자 (예: 4.0):", value=4.0, step=0.1, key="m2_p")
+    with col2: h_exponent = st.number_input("10의 마이너스 지수 (예: -2):", value=-2, step=1, key="m2_e")
+
+elif current_mode == "3":
+    ph_input = st.number_input("pH 값 입력:", value=4.70, format="%.2f", step=0.01, key="m3_ph")
+    use_log_hint = st.checkbox("로그 단서 활용하기", value=True, key="m3_chk")
+    col1, col2 = st.columns(2)
+    with col1: log_base_num = st.number_input("로그 진수 (예: 2):", value=2.0, step=0.1, key="m3_l1")
+    with col2: log_value = st.number_input("로그 값 (예: 0.30):", value=0.30, step=0.01, key="m3_l2")
+
+elif current_mode == "4":
+    sol_kind = st.radio("용액 성질 선택:", ["산성 용액끼리 섞음", "염기성 용액끼리 섞음"], key="m4_rad")
+    col1, col2 = st.columns(2)
+    with col1:
+        n1 = st.number_input("1번 노르말 농도 (N):", value=0.10, format="%.4f", step=0.01, key="m4_n1")
+        v1 = st.number_input("1번 부피 (mL):", value=50, step=5, key="m4_v1")
+    with col2:
+        n2 = st.number_input("2번 노르말 농도 (N):", value=0.20, format="%.4f", step=0.01, key="m4_n2")
+        v2 = st.number_input("2번 부피 (mL):", value=50, step=5, key="m4_v2")
+
+elif current_mode == "5":
+    sol_type = st.radio("용액의 성질:", ["강산성 용액", "강염기성 용액"], key="m5_r1")
+    unit_type = st.radio("농도 단위:", ["몰 농도 (M)", "노르말 농도 (N)"], key="m5_r2")
+    valence = st.radio("용액의 가수:", ["1가 용액", "2가 용액"], key="m5_r3")
+    raw_conc = st.number_input("농도 수치 입력:", value=0.0100, format="%.4f", step=0.001, key="m5_conc")
+
+elif current_mode == "6":
+    mix_type = st.radio("혼합 종류 선택:", ["산성 용액 + 염기성 용액 (중화 반응)", "같은 성질의 용액끼리 믹스"], key="m6_type")
+    if "중화 반응" in mix_type:
+        acid_n = st.number_input("산성 노르말 농도 (N):", value=0.1, step=0.01, key="m6_an")
+        acid_v = st.number_input("산성 부피 (mL):", value=50, step=1, key="m6_av")
+        base_n = st.number_input("염기성 노르말 농도 (N):", value=0.2, step=0.01, key="m6_bn")
+        base_v = st.number_input("염기성 부피 (mL):", value=50, step=1, key="m6_bv")
+    else:
+        sol_kind_6 = st.radio("용액 성질:", ["산성 용액끼리 섞음", "염기성 용액끼리 섞음"], key="m6_kind_b")
+        col1, col2 = st.columns(2)
+        with col1:
+            n1_6 = st.number_input("1번 노르말 농도 (N):", value=0.0010, format="%.4f", step=0.001, key="m6_n1")
+            v1_6 = st.number_input("1번 부피 (mL):", value=100, step=10, key="m6_v1")
+        with col2:
+            n2_6 = st.number_input("2번 노르말 농도 (N):", value=0.0001, format="%.4f", step=0.001, key="m6_n2")
+            v2_6 = st.number_input("2번 부피 (mL):", value=100, step=10, key="m6_v2")
+
+elif current_mode == "7":
+    target_type = st.radio("미지 용액 종류:", ["미지의 강산 용액", "미지의 강염기 용액"], key="m7_target")
+    v_target = st.number_input("미지 용액 채취량 (mL):", value=100, step=10, key="m7_vt")
+    n_standard = st.number_input("표준 용액 노르말 농도 (N):", value=0.1000, format="%.4f", step=0.01, key="m7_ns")
+    v_standard = st.number_input("소비된 표준 용액 부피 (mL):", value=10, step=1, key="m7_vs")
+
+elif current_mode == "8":
+    acid_base_type = st.radio("용액 성질:", ["약산성 용액", "약염기성 용액"], key="m8_ab")
+    given_type = st.radio("주어진 조건 종류:", ["해리 상수 (Ka 또는 Kb)", "전리도"], key="m8_given")
+    molarity = st.number_input("용액의 몰 농도 (M):", value=0.010, format="%.4f", step=0.001, key="m8_m")
+    if given_type == "해리 상수 (Ka 또는 Kb)":
+        col1, col2 = st.columns(2)
+        with col1: k_prefix = st.number_input("상수 앞 숫자:", value=1.8, step=0.1, key="m8_kp")
+        with col2: k_exponent = st.number_input("10의 지수:", value=-5, step=1, key="m8_ke")
+    else:
+        ionization_input = st.number_input("전리도 입력:", value=1.0, format="%.5f", step=0.1, key="m8_ion")
+        input_type = st.radio("단위 선택:", ["퍼센트 단위 (%)", "소수점 단위 (0~1)"], key="m8_itype")
+
+elif current_mode == "9":
+    st.write("분자량 가이드: NaOH=40 | HCl=36.5 | H2SO4=98 | CH3COOH=60")
+    col1, col2 = st.columns(2)
+    with col1: mw = st.number_input("물질의 분자량 입력:", value=40.0, step=1.0, key="m9_mw")
+    with col2: val = st.number_input("물질의 가수 입력 (1 또는 2):", value=1, step=1, key="m9_val")
+    input_mode = st.radio(
+        "알고 있는 농도 종류:",
+        ["W/V % 농도 직접 입력", "몰 농도 (M) 직접 입력", "노르말 농도 (N) 직접 입력", "ppm 농도 직접 입력"],
+        key="m9_mode"
+    )
+    if "%" in input_mode: wv_percent = st.number_input("W/V % 값:", value=1.0, format="%.2f", step=0.1, key="m9_wv")
+    elif "(M)" in input_mode:
+        m_val = st.number_input("몰 농도 (M) 값:", value=0.25, format="%.4f", step=0.01, key="m9_m")
+        wv_percent = (m_val * mw) / 10.0
+    elif "(N)" in input_mode:
+        n_val = st.number_input("노르말 농도 (N) 값:", value=0.25, format="%.4f", step=0.01, key="m9_n")
+        wv_percent = ((n_val / val) * mw) / 10.0 if val > 0 else 0.0
+    elif "ppm" in input_mode:
+        ppm_val = st.number_input("ppm 값:", value=10000.0, format="%.1f", step=100.0, key="m9_ppm")
+        wv_percent = ppm_val / 10000.0
+
+elif current_mode == "10":
+    col1, col2 = st.columns(2)
+    with col1: oh_p = st.number_input("농도 앞자리 숫자 (예: 1.0):", value=1.0, step=0.1, key="m10_oh_p")
+    with col2: oh_e = st.number_input("10의 마이너스 지수 (예: -3):", value=-3, step=1, key="m10_oh_e")
 
 st.write("")
 
-# [하단 연산 패드 라인] 기능 실행을 위한 핵심 물리 버튼 배치
-col_btn1, col_btn2, col_btn3 = st.columns(3)
+# [하단 연산 패드 버튼]
+col_btn1, col_btn2 = st.columns(2)
 
 with col_btn1:
     if st.button("AC (초기화)", use_container_width=True, key="btn_ac"):
-        st.session_state.p_val = "1.0"
-        st.session_state.e_val = "-7"
         st.session_state.ph_result = "SYSTEM RESET 완료"
         st.rerun()
 
 with col_btn2:
-    if st.button("Log (단서 확인)", use_container_width=True, key="btn_log"):
-        try:
-            val_p = float(st.session_state.p_val)
-            st.session_state.ph_result = f"LOG DATA: log10({val_p}) = {math.log10(val_p):.4f}"
-        except:
-            st.session_state.ph_result = "수치 입력 오류"
-        st.rerun()
-
-with col_btn3:
     if st.button(" ＝ (결과 출력)", type="primary", use_container_width=True, key="btn_equal"):
         try:
-            p = float(st.session_state.p_val)
-            e = float(st.session_state.e_val)
-            
-            if p <= 0:
-                st.session_state.ph_result = "ERROR: 앞자리는 0보다 커야 합니다."
-            else:
-                h_conc = p * (10 ** e)
+            if current_mode == "1":
+                h_conc_val = hp_prefix * (10 ** hp_exponent)
+                st.session_state.ph_result = "OUTPUT ──>\n" + f"pH = {-math.log10(h_conc_val):.2f}"
                 
-                if st.session_state.calc_menu == "1":
-                    final_ph = -math.log10(h_conc)
-                    st.session_state.ph_result = f"OUTPUT ──> pH = {final_ph:.2f}"
-                elif st.session_state.calc_menu == "2":
-                    oh_conc = 1e-14 / h_conc
-                    base, exp_v = f"{oh_conc:.2e}".split('e')
-                    st.session_state.ph_result = f"OUTPUT ──> [OH-] = {base} × 10^{int(exp_v)}"
-                elif st.session_state.calc_menu == "3":
-                    final_ph = -math.log10(h_conc)
-                    st.session_state.ph_result = f"강산 OUTPUT ──> pH = {final_ph:.2f}"
-                elif st.session_state.calc_menu == "4":
-                    final_ph = -math.log10(h_conc * 0.01)
-                    st.session_state.ph_result = f"약산(1%전리) ──> pH = {final_ph:.2f}"
+            elif current_mode == "2":
+                oh_conc = 1e-14 / (h_prefix * (10 ** h_exponent))
+                base, exponent_val = f"{oh_conc:.2e}".split('e')
+                st.session_state.ph_result = "OUTPUT ──>\n" + f"[OH-] = {base} × 10^{int(exponent_val)} mol/L"
+                
+            elif current_mode == "3":
+                h_conc = 10 ** (-ph_input)
+                res = f"[H+] = {h_conc:.2e} mol/L"
+                if use_log_hint:
+                    floor_val = math.ceil(ph_input)
+                    diff = floor_val - ph_input
+                    if abs(diff - log_value) < 0.02:
+                        res += f"\n(시험 보기 형태: {log_base_num} × 10^-{floor_val} mol/L)"
+                st.session_state.ph_result = "OUTPUT ──>\n" + res
+                
+            elif current_mode == "4":
+                total_v_l = (v1 + v2) / 1000.0
+                final_n = ((n1 * v1 / 1000.0) + (n2 * v2 / 1000.0)) / total_v_l
+                ans_ph = -math.log10(final_n) if "산성" in sol_kind else 14.0 - (-math.log10(final_n))
+                st.session_state.ph_result = "OUTPUT ──>\n" + f"최종 농도: {final_n:.4f} N\n최종 pH = {ans_ph:.2f}"
+                
+            elif current_mode == "5":
+                final_n = raw_conc * 2 if (unit_type == "몰 농도 (M)" and "2가" in valence) else raw_conc
+                ans_ph = -math.log10(final_n) if "강산성" in sol_type else 14.0 - (-math.log10(final_n))
+                st.session_state.ph_result = "OUTPUT ──>\n" + f"pH = {ans_ph:.2f}"
+                
+            elif current_mode == "6":
+                if "중화 반응" in mix_type:
+                    total_v_l = (acid_v + base_v) / 1000.0
+                    acid_eq, base_eq = acid_n * acid_v / 1000.0, base_n * base_v / 1000.0
+                    if acid_eq > base_eq: ans_ph = -math.log10((acid_eq - base_eq) / total_v_l)
+                    elif base_eq > acid_eq: ans_ph = 14.0 - (-math.log10((base_eq - acid_eq) / total_v_l))
+                    else: ans_ph = 7.0
+                else:
+                    total_v_l = (v1_6 + v2_6) / 1000.0
+                    final_n = ((n1_6 * v1_6 / 1000.0) + (n2_6 * v2_6 / 1000.0)) / total_v_l
+                    ans_ph = -math.log10(final_n) if "산성" in sol_kind_6 else 14.0 - (-math.log10(final_n))
+                st.session_state.ph_result = "OUTPUT ──>\n" + f"혼합 pH = {ans_ph:.2f}"
+                
+            elif current_mode == "7":
+                n_result = (n_standard * v_standard) / v_target
+                ans_ph = -math.log10(n_result) if "강산" in target_type else 14.0 - (-math.log10(n_result))
+                st.session_state.ph_result = "OUTPUT ──>\n" + f"미지 농도: {n_result:.4f} N\n최종 pH = {ans_ph:.2f}"
+                
+            elif current_mode == "8":
+                if given_type == "해리 상수 (Ka 또는 Kb)":
+                    ion_conc = math.sqrt(molarity * (k_prefix * (10 ** k_exponent)))
+                else:
+                    alpha = ionization_input / 100.0 if "퍼센트" in input_type else ionization_input
+                    ion_conc = molarity * alpha
+                ans_ph = -math.log10(ion_conc) if "약산성" in acid_base_type else 14.0 - (-math.log10(ion_conc))
+                st.session_state.ph_result = "OUTPUT ──>\n" + f"pH = {ans_ph:.2f}"
+                
+            elif current_mode == "9":
+                calc_ppm = wv_percent * 10000.0
+                calc_m = (wv_percent * 10.0) / mw
+                calc_n = calc_m * val
+                st.session_state.ph_result = "OUTPUT ──>\n" + f"M농도: {calc_m:.4f} M | N농도: {calc_n:.4f} N\nppm: {calc_ppm:,.0f} ppm | %농도: {wv_percent:.2f} %"
+                
+            elif current_mode == "10":
+                poh = -math.log10(oh_p * (10 ** oh_e))
+                st.session_state.ph_result = "OUTPUT ──>\n" + f"pH = {14.0 - poh:.2f}"
         except:
-            st.session_state.ph_result = "ERROR: 입력 값을 다시 확인하세요."
+            st.session_state.ph_result = "ERROR: 입력 수치를 확인하세요."
         st.rerun()
