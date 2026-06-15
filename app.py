@@ -2,15 +2,15 @@ import streamlit as st
 import math
 
 # 스마트폰 화면 비율에 맞게 페이지 설정
-st.set_page_config(page_title="공학용 pH 마스터 v6.0", layout="centered")
+st.set_page_config(page_title="공학용 pH 마스터 v6.1", layout="centered")
 
 # 세션 스테이트(결과 저장용 메모리) 초기화
 if "ph_result" not in st.session_state: 
-    st.session_state.ph_result = "READY... [ ＝ ] BUTTON PRESS"
+    st.session_state.ph_result = "READY..."
 
-# 📟 1. [위치 변경] 최상단 민트색 소형 액정(LCD) 화면 구역
-# 에러를 유발하는 HTML 주입 대신 스트림릿 순정 상자의 배경 컬러 감성을 활용했습니다.
-st.success("📟 LCD SCREEN : " + st.session_state.ph_result)
+# 📟 1. 최상단 순정 민트색 액정 화면 구역 (문구 및 이모티콘 전면 삭제)
+# 오직 계산 결과 데이터만 깔끔하게 노출됩니다.
+st.success(st.session_state.ph_result)
 
 # 📸 2. 공학용 계산기 자판 이미지 배치 (액정 바로 아래로 연결)
 st.image(
